@@ -1,0 +1,141 @@
+import numpy as np
+import expl_plots
+
+
+## Read in parameters from slope file
+if 'M' in dataset:
+    f=open('mearth_slope_file.txt',"r")
+elif 'S' in dataset:
+    f=open('spitzer_slope_file.txt',"r")
+lines=f.readlines()
+ser, rp_list, a_list, t0_list, ecw_list, esw_list, limb1_list, limb2_list, \
+                slope_list, offset_list, dur_list, depth_list, ecc_list, w_list, max_list \
+                = [], [], [], [], [], [], [], [], [], [], [], [], [], [], []
+for bit in lines:
+    ser.append(bit.split(';')[0])
+    rp_list.append(bit.split(';')[1])
+    a_list.append(bit.split(';')[2])
+    t0_list.append(bit.split(';')[3])
+    ecw_list.append(bit.split(';')[4])
+    esw_list.append(bit.split(';')[5])
+    limb1_list.append(bit.split(';')[6])
+    limb2_list.append(bit.split(';')[7])
+    slope_list.append(bit.split(';')[8])
+    offset_list.append(bit.split(';')[9])
+    dur_list.append(bit.split(';')[10])
+    depth_list.append(bit.split(';')[11])
+    ecc_list.append(bit.split(';')[12])
+    w_list.append(bit.split(';')[13])
+    max_list.append(bit.split(';')[14])
+f.close()
+
+## Change serial from '89_mearth' to 89.0 (float)
+i = 0
+for num in ser:
+    num = float(num.split('_')[0])
+    ser[i] = num
+    i+=1
+
+rp_err, a_err, t0_err, ecw_err, esw_err, limb1_err, limb2_err, slope_err, \
+                        offset_err, dur_err, dep_err, ecc_err, w_err = \
+                        [], [], [], [], [], [], [], [], [], [], [], [], []
+
+## Grab best values
+i = 0
+while i<len(ser):
+    rp_list[i] = np.array(rp_list[i].strip('[]').split(','), dtype=float)
+    a_list[i] = np.array(a_list[i].strip('[]').split(','), dtype='float')
+    t0_list[i] = np.array(t0_list[i].strip('[]').split(','), dtype='float')
+    ecw_list[i] = np.array(ecw_list[i].strip('[]').split(','), dtype='float')
+    esw_list[i] = np.array(esw_list[i].strip('[]').split(','), dtype='float')
+    limb1_list[i] = np.array(limb1_list[i].strip('[]').split(','), dtype='float')
+    limb2_list[i] = np.array(limb2_list[i].strip('[]').split(','), dtype='float')
+    slope_list[i] = np.array(slope_list[i].strip('[]').split(','), dtype='float')
+    offset_list[i] = np.array(offset_list[i].strip('[]').split(','), dtype='float')
+    dur_list[i] = np.array(dur_list[i].strip('[]').split(','), dtype='float')
+    depth_list[i] = np.array(depth_list[i].strip('[]').split(','), dtype='float')
+    ecc_list[i] = np.array(ecc_list[i].strip('[]').split(','), dtype='float')
+    w_list[i] = np.array(w_list[i].strip('[]').split(','), dtype='float')
+    max_list[i] = np.array(max_list[i].strip('[]').split(','), dtype='float')
+    i+=1
+
+## Grab error values
+i = 0
+while i<len(ser):
+    rp_err.append([rp_list[i][2], rp_list[i][1]])
+    rp_list[i] = rp_list[i][0]
+    a_err.append([a_list[i][2], a_list[i][1]])
+    a_list[i] = a_list[i][0]
+    t0_err.append([t0_list[i][2], t0_list[i][1]])
+    t0_list[i] = t0_list[i][0]
+    ecw_err.append([ecw_list[i][2], ecw_list[i][1]])
+    ecw_list[i] = ecw_list[i][0]
+    esw_err.append([esw_list[i][2], esw_list[i][1]])
+    esw_list[i] = esw_list[i][0]
+    limb1_err.append([limb1_list[i][2], limb1_list[i][1]])
+    limb1_list[i] = limb1_list[i][0]
+    limb2_err.append([limb2_list[i][2], limb2_list[i][1]])
+    limb2_list[i] = limb2_list[i][0]
+    slope_err.append([slope_list[i][2], slope_list[i][1]])
+    slope_list[i] = slope_list[i][0]
+    offset_err.append([offset_list[i][2], offset_list[i][1]])
+    offset_list[i] = offset_list[i][0]
+    dur_err.append([dur_list[i][2], dur_list[i][1]])
+    dur_list[i] = dur_list[i][0]
+    dep_err.append([depth_list[i][2], depth_list[i][1]])
+    depth_list[i] = depth_list[i][0]
+    ecc_err.append([ecc_list[i][2], ecc_list[i][1]])
+    ecc_list[i] = ecc_list[i][0]
+    w_err.append([w_list[i][2], w_list[i][1]])
+    w_list[i] = w_list[i][0]
+    i+=1
+
+## Order parameters by transit number
+index = np.argsort(ser)
+
+ser = np.array(ser)[index]
+rp_list = np.array(rp_list)[index]
+a_list = np.array(a_list)[index]
+t0_list = np.array(t0_list)[index]
+ecw_list = np.array(ecw_list)[index]
+esw_list = np.array(esw_list)[index]
+limb1_list = np.array(limb1_list)[index]
+limb2_list = np.array(limb2_list)[index]
+slope_list = np.array(slope_list)[index]
+offset_list = np.array(offset_list)[index]
+dur_list = np.array(dur_list)[index]
+depth_list = np.array(depth_list)[index]
+ecc_list = np.array(ecc_list)[index]
+w_list = np.array(w_list)[index]
+max_list = np.array(max_list)[index]
+
+## Calculate average values for each parameter
+spitzer_avg = [np.mean(rp_list), np.mean(a_list), np.mean(t0_list), np.mean(ecw_list), \
+               np.mean(esw_list), np.mean(limb1_list), np.mean(limb2_list), np.mean(slope_list), \
+               np.mean(offset_list), np.mean(dur_list), np.mean(depth_list)]
+mearth_avg = [np.mean(rp_list), np.mean(a_list), np.mean(t0_list), np.mean(ecw_list), \
+              np.mean(esw_list), np.mean(limb1_list), np.mean(limb2_list), np.mean(slope_list), \
+              np.mean(offset_list), np.mean(dur_list), np.mean(depth_list)]
+LCO_avg = [np.mean(rp_list), np.mean(a_list), np.mean(t0_list), np.mean(ecw_list), \
+           np.mean(esw_list), np.mean(limb1_list), np.mean(limb2_list), np.mean(slope_list), \
+           np.mean(offset_list), np.mean(dur_list), np.mean(depth_list)]
+
+
+## Pick which plots you would like to make here.
+## Helpful guide for order of parameters:
+#===================================================================================================================================================#
+# SET  SER  x_label  y_label  x_data  y_data  y_err  spitzer_avg  mearth_avg  LCO_avg(x_err)  (ptitle)  (ftitle)
+#===================================================================================================================================================#
+## where ftitle is the title of the file, and ptitle is the title of the plot as shown in the pdf.
+
+print "transit numbers", ser
+
+##B1 -- param v. transit: PLANET RADIUS
+ex.make_plot(dataset, ser, 'Transit', 'Planet radius', ser, rp_list, rp_err, spitzer_avg, mearth_avg, LCO_avg, ftitle='rp')
+ex.make_plot(dataset, ser, 'Transit', 'Eccentricity', ser, ecc_list, ecc_err, spitzer_avg, mearth_avg, LCO_avg, ftitle='ecc')
+ex.make_plot(dataset, ser, 'Transit', 'Time of Mid-Transit', ser, t0_list, t0_err, spitzer_avg, mearth_avg, LCO_avg, ftitle='t0')
+ex.make_plot(dataset, ser, 'Transit', 'Transit Depth', ser, depth_list, dep_err, spitzer_avg, mearth_avg, LCO_avg, ftitle='depth')
+ex.make_plot(dataset, ser, 'Transit', 'Transit Duration', ser, dur_list, dur_err, spitzer_avg, mearth_avg, LCO_avg, ftitle='duration')
+
+##B2 -- param v. param: RADIUS V DURATION
+#    ex.make_plot(dataset, ser, 'Planet radius', 'Transit duration', rp_list, dur_list, dur_err, spitzer_avg, LCO_avg, mearth_avg, x_err=rp_err, ftitle='dur-v-rp')
