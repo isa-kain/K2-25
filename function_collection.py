@@ -18,10 +18,19 @@ import time as timepackage
 from zachopy import oned as bin
 #from plotwalkers import walkers
 import pickle
-#import sklearn.preprocessing as pre
 
-global dataset
-global reduction
+
+def call_things(x, y, yerr, serial, conv_flux=True):
+    time, magnitude, magError = prelim(x, y, yerr, conv_flux=conv_flux)
+    print 'finished prelim'
+    rp_rstar, a_rstar, midtransit, params, time, magnitude, magError, thismodel, transit_num = initialModel(time, magnitude, magError, serial)
+    print 'finished initial model'
+    samples, sampler, variables = emceeModel(rp_rstar, a_rstar, midtransit, params, time, magnitude, magError, thismodel, serial, transit_num)
+    print 'finished emcee model'
+    cornerPlot(samples, serial, variables)
+    print 'finshed corner plot'
+    #pw.walkers(sampler, serial, variables)
+    #print 'finished plotting walkers'
 
 # Kipping 2012
 # https://academic.oup.com/mnras/article/435/3/2152/1024138/Efficient-uninformative-sampling-of-limb-darkening#18186712
@@ -154,12 +163,8 @@ def lnlikelihood(theta, params, model, t, flux, err, myt0): #flux = adjusted mag
 #        print calc_eccw(theta[3], theta[4]) ## ecc, w
 #        return -np.inf
     if not np.all(np.isfinite(residuals)):
-#        print "residuals:", residuals
-#        print "theta:", theta
         return -np.inf
     if not np.all(np.isfinite(err)):
-#        print "errors:", err
-#        print "theta:", theta
         return -np.inf
 
     return ln_likelihood
@@ -183,13 +188,9 @@ def lnprobability(theta, params, model, t, flux, err, variables, myt0):
     ## Find prior, likelihood
     assert (i) == len(theta)
     lp = lnprior(theta_all, range_all)
-#    print 'lp: ', lp
     if not np.isfinite(lp):
         return -np.inf
     lli = lnlikelihood(theta_all, params, model, t, flux, err, myt0)
-    #print params.rp, params.a, params.t0, params.ecc, params.w, params.u, params.inc
-    #print lp, lli
-#    print 'lli: ', lli
     return lp + lli
 
 ##==================================================##
@@ -246,21 +247,17 @@ def prelim(x, y, yerr, conv_flux=True):
 
         ind = 0
         check = np.ones(len(time), dtype = bool)
-        if 'K' in dataset:
-            num = 4
-        else:
-            num=3
+	
         for m in magnitude:
-            if m>=(avg + (num*std)) or m<=(avg - (num*std)):
+            if m>=(avg + (3*std)) or m<=(avg - (3*std)):
                 check[ind] = False
             else:
                 check[ind] = True
             ind+=1
+	
         time = time[check]
         magnitude = magnitude[check]
         magError = magError[check]
-
-    print "INPUT DATASET", x, y
 
     return time, magnitude, magError
 
