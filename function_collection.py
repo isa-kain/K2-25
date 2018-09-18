@@ -13,14 +13,24 @@ import emcee
 import corner
 import re
 import copy
-#from os import sys
 import time as timepackage
 from zachopy import oned as bin
 #from plotwalkers import walkers
 import pickle
-#import sklearn.preprocessing as pre
 
 global dataset
+
+def call_things(x, y, yerr, serial, conv_flux=True):
+    time, magnitude, magError = prelim(x, y, yerr, conv_flux=conv_flux)
+    print 'finished prelim'
+    rp_rstar, a_rstar, midtransit, params, time, magnitude, magError, thismodel, transit_num = initialModel(time, magnitude, magError, serial)
+    print 'finished initial model'
+    samples, sampler, variables = emceeModel(rp_rstar, a_rstar, midtransit, params, time, magnitude, magError, thismodel, serial, transit_num)
+    print 'finished emcee model'
+    cornerPlot(samples, serial, variables)
+    print 'finshed corner plot'
+    #pw.walkers(sampler, serial, variables)
+    #print 'finished plotting walkers'
 
 # Kipping 2012
 # https://academic.oup.com/mnras/article/435/3/2152/1024138/Efficient-uninformative-sampling-of-limb-darkening#18186712
@@ -51,7 +61,7 @@ def calc_escw(ecc, w):
 def calc_g(ecc, w):
     return 1.+ecc*np.sin(np.deg2rad(w))/np.sqrt(1.-ecc**2)
 
-
+## find_key: combs through parameter file, returns true if key is found
 def find_key(key):
     if 'Megastack' in key:
         with open('megaslope_file.txt', 'r') as slope_file:
@@ -107,6 +117,7 @@ def lnprior(theta, minmax, a_mean=21.8, a_sigma=1.5572, rp_mean=0.11, rp_sigma=0
     return lnprior_r + lnprior_a
 
 def lnlikelihood(theta, params, model, t, flux, err, myt0): #flux = adjusted magnitude, err = adjusted magError
+    
     ## Initialize batman
     params.rp = copy.deepcopy(theta[0])
     params.a = copy.deepcopy(theta[1])
@@ -127,20 +138,13 @@ def lnlikelihood(theta, params, model, t, flux, err, myt0): #flux = adjusted mag
     if np.random.random() < 1e-4:
      	print timepackage.ctime(timepackage.time()), "lnlikelihood:", ln_likelihood
         print theta
-#        print params.rp, params.a
 
     ## Examine bad values
     if ln_likelihood<0:
-#        print 'problematic theta:', theta
-#        print calc_eccw(theta[3], theta[4]) ## ecc, w
         return -np.inf
     if not np.all(np.isfinite(residuals)):
-#        print "residuals:", residuals
-#        print "theta:", theta
         return -np.inf
     if not np.all(np.isfinite(err)):
-#        print "errors:", err
-#        print "theta:", theta
         return -np.inf
 
     return ln_likelihood
@@ -179,9 +183,6 @@ def prelim(x, y, yerr, conv_flux=True):
     time = x[m]
     magnitude = y[m]
     magError = yerr[m]
-
-#    print time[0]
-#    print 'magnitude: ', magnitude
 
     ## If magnitude, convert to flux
     if conv_flux==True:
