@@ -169,10 +169,17 @@ def make_plot(dataset, ser, x_label, y_label, x_data, y_data, y_err, spitzer_avg
             plt.savefig('../plots/'+'L_' + ftitle + '_plot.pdf', bbox_inches='tight')
 
 
-def violin(varyparams, vplot):
-    pickles = glob.glob('/Users/X-phile/Dropbox/k225_transits/code/pickle*')
+def violin(varyparams, vplot, d=''):
+    ## varyparams = all parameters that emcee is varying
+    ## vplot = all params to be plotted here
+    if 'K' in d:
+        pickles = glob.glob('/Users/X-phile/Dropbox/k225_transits/code/pickle*K2_k2sc')
+    else:
+        pickles = glob.glob('/Users/X-phile/Dropbox/k225_transits/code/pickle*_')
+    print pickles
     ser = []
-    dset = []
+    dset = [] ##doesn't work for S and M >> put more if statements (ugh)
+    reduc = []
     pdata = [None]*len(pickles)
     i = 0
 
@@ -182,27 +189,32 @@ def violin(varyparams, vplot):
         h, t = os.path.split(pickles[i])
         ser.append(t.split('_')[1])
         dset.append(t.split('_')[2])
+        if 'K2' in t.split('_')[2]:
+            reduc.append(t.split('_')[3])
 
-    ## Fiddle with GJ, Megastack things
+    ## Assign serials for GJ1132, Megastack data
     for i in range(0,len(ser)):
         if 'GJ' in ser[i]:
             ser[i] = '1132.'
             dset[i] = 'GJ'
         if 'Megastack' in ser[i]:
-            ser[i] = '0000.'
+            ser[i] = '-1.'
 
     ## Convert serials from string to int
     ser = [int(float(ser[i])) for i in range(0,len(pdata))]
 
     ## Sort everything by increasing transit number
-    bigthing = zip(ser, pdata, dset)
+    bigthing = zip(ser, pdata, dset, reduc)
     bigthing.sort(key=lambda x: x[0])
-    ser, pdata, dset = zip(*bigthing)
+#    print bigthing
+
+    ser, pdata, dset, reduc = zip(*bigthing)
     ser = list(ser)
     pdata = list(pdata)
     dset = list(dset)
+    reduc = list(reduc)
 
-    print dset
+#    print dset
 
     ## Make plot for each parameter
     for v in vplot:
@@ -218,6 +230,8 @@ def violin(varyparams, vplot):
                 colors[i] = '#DACF33'
             elif dset[i]=='LCO':
                 colors[i] = '#8184F6'
+            elif dset[i]=='K2':
+                colors[i] = '#f9ae1f'
             else:
                 colors[i] = '#70BF81'
 
@@ -226,46 +240,120 @@ def violin(varyparams, vplot):
             print 'correcting t0s'
 
             ## List of myt0 values zipped to serial
-            a = [2457721.16224, 2457728.13136, 2457731.61593, 2457735.10049, 2457742.06962, 2457745.55418, \
-                2457749.03875, 2457752.52331, 2457756.00788, 2457884.93674, 2457668.89378,  \
-                2457675.86290, 2457682.83203, 2457689.80116, 2457696.77029, 2457703.73942,  \
-                2457710.70854, 2457717.67767, 2457724.6468, 2457731.61593, 2457365.73671, 2457372.70584]
-            b = [189, 191, 192, 193, 195, 196, 197, 198, 199, 236, 174, 176, 178, 180, 182, 184, 186, 188, 190, 192, 87, 89]
-            timeslist = zip(b,a)
-            timeslist.sort()
+            if 'K2' in dset:
+                ktwo_data = open('K2_ktwo_slope_file.txt', 'r')
+                k2sc_data = open('K2_ktwo_slope_file.txt', 'r')
 
-            ## Remove Megastack things from everywhere
-            ser = list(ser[2:])
-            pdata = list(pdata[2:])
-            pplot = list(pplot[2:])
-            dset = list(dset[2:])
-            colors = list(colors[2:])
+                data = [ktwo_data, k2sc_data]
+                tel = ['spitz', 'mearth', 'ktwo', 'k2sc']
 
-            ## Convert t0 to O-C
-            nums, t0s = zip(*timeslist)
-            nums = list(nums)
-            t0s = list(t0s)
+                ## Parse data files for each dataset
+                nums, t0_list, tel_list = [], [], []
+                for i in range(0, len(data)):
+                    dset = data[i]
+                    lines = dset.readlines()
+                    for bit in lines:
+                        nums.append(bit.split(';')[0])
+                        t0_list.append(bit.split(';')[3])
+                        tel_list.append(tel[i])
+                    dset.close() ##
 
+                nums = list(nums)
+                t0s = list(t0s)
+                reduc = list(reduc)
+
+
+            else:
+                s_data = open('spitzer_slope_file.txt', 'r')
+                m_data = open('mearth_slope_file.txt', 'r')
+
+                data = [s_data, m_data, ktwo_data, k2sc_data]
+                tel = ['spitz', 'mearth', 'ktwo', 'k2sc']
+
+
+                ## Parse data files for each dataset
+                ser, t0_list, tel_list = [], [], []
+                for i in range(0, len(data)):
+                    dset = data[i]
+                    lines = dset.readlines()
+                    for bit in lines:
+                        ser.append(bit.split(';')[0])
+                        t0_list.append(bit.split(';')[3])
+                        tel_list.append(tel[i])
+                    dset.close() ##
+
+                ## Remove Megastack things from everywhere -- hardcode option, change later?
+                if 'S' in dset or 'M' in dset:
+                    ser = list(ser[2:])
+                    pdata = list(pdata[2:])
+                    pplot = list(pplot[2:])
+                    dset = list(dset[2:])
+                    colors = list(colors[2:])
+
+                nums, t0s = zip(*timeslist)
+                nums = list(nums)
+                t0s = list(t0s)
+
+            ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+            ## Center time values by t0
             if ser==nums:
-                print 'doing the thing'
                 pplot = list(np.array(pplot[i]) - np.array(t0s[i]) for i in range(0,len(pplot)))
+            ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
+        ## Change colors based on data reduction
+        for i in range(0, len(colors)):
+            if 'k2sc' in reduc[i]:
+                colors[i] = '#70BF81'
 
         ## Make plots
-        fig, ax = plt.subplots(figsize=(15,5))
-        sb.violinplot(data=pplot, inner = 'quartiles', cut = 0, palette = colors, ax = ax)
-        ax.set(xticklabels=ser)
-        ax.set_xlabel('Transit Number')
-        ax.set_ylabel(str(v))
-        ax.set_title(str(v) + ' Distribution')
+        if len(ser)>40:
+            fig, (ax1, ax2, ax3) = plt.subplots(3,1, figsize=(15,15), sharey=True)
+            sb.violinplot(data=pplot[:14], inner = 'quartiles', cut = 0, palette = colors, ax = ax1)
+            sb.violinplot(data=pplot[14:29], inner = 'quartiles', cut = 0, palette = colors, ax = ax2)
+            sb.violinplot(data=pplot[29:], inner = 'quartiles', cut = 0, palette = colors, ax = ax3)
+            ax1.set(xticklabels=ser[:14])
+            ax2.set(xticklabels=ser[14:29])
+            ax3.set(xticklabels=ser[29:])
+            ax3.set_xlabel('Transit Number')
+            ax2.set_ylabel(str(v))
+            ax1.set_ylim(-.01, .01)
+            fig.suptitle(str(v) + ' Distribution')
+        elif len(ser)>11:  ##2 vertically stacked panels for large number of transits
+            fig, (ax1, ax2) = plt.subplots(2,1, sharey=True, figsize=(15,10))
+            sb.violinplot(data=pplot[:12], inner = 'quartiles', cut = 0, palette = colors, ax = ax1)
+            sb.violinplot(data=pplot[12:], inner = 'quartiles', cut = 0, palette = colors, ax = ax2)
+            ax1.set(xticklabels=ser[:12])
+            ax2.set(xticklabels=ser[12:])
+            ax2.set_xlabel('Transit Number')
+            ax1.set_ylabel(str(v))
+            fig.suptitle(str(v) + ' Distribution')
+        else:
+            fig, ax1 = plt.subplots(figsize=(15,5))
+            sb.violinplot(data=pplot, inner = 'quartiles', cut = 0, palette = colors, ax = ax1)
+            ax1.set(xticklabels=ser)
+            ax1.set_xlabel('Transit Number')
+            ax1.set_ylabel(str(v))
+            fig.suptitle(str(v) + ' Distribution')
+            plt.tight_layout()
 
+        #Build legend
+        if 'K2' in dset:
+            patch1 = mpatches.Rectangle((0,0),1,1,fc='#70BF81')
+            patch2 = mpatches.Rectangle((0,0),1,1,fc='#f9ae1f')
+            ax1.legend(loc=1, handles=(patch1, patch2), labels=('K2SC', 'KTWO'))
+        else:
+            patch1 = mpatches.Rectangle((0,0),1,1,fc='#579BC3')
+            patch2 = mpatches.Rectangle((0,0),1,1,fc='#DACF33')
+            ax1.legend(loc=1, handles=(patch1, patch2), labels=('Spitzer', 'MEarth'))
+
+        # For specific vplots, set limits
         if 'rp' in v:
-            ax.set_ylim(0.08, 0.14)
-        if 't0' in v:
-            ax.set_ylim(-0.005, 0.005)
+            ax1.set_ylim(0.09, 0.12)
+#        if 't0' in v:
+#            ax1.set_ylim(-0.004, 0.005)
 
         plt.show()
-        ax.figure.savefig('../plots/' + str(v) + '_violin.png')
+        fig.savefig('../plots/' + str(v) + '_violin.png')
 
 
 #8184f6 lilac
