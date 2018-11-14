@@ -9,12 +9,11 @@ from __future__ import division, unicode_literals
 import numpy as np
 import glob
 import functionsCollection as fc
-#import magic_file as m
 import expl_plots as ex
 from astropy.io import ascii
 from astropy.io import fits
 import gc
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import matplotlib as mpl
 mpl.rcParams.update(mpl.rcParamsDefault)
 
@@ -49,7 +48,6 @@ def call_things(x, y, yerr, serial, conv_flux=True):
 def ind_analysis(list_of_files, dataset):
     ask_ind = input('Analyze individual datasets? \"Y\" or \"N\":')
     if 'N' in ask_ind:
-#        print 'Ok, no idividual analysis.'
         return 0
 
     for thisfile in list_of_files:
@@ -66,7 +64,6 @@ def ind_analysis(list_of_files, dataset):
             myt0 = t0 + per*numtransits
             print myt0
             serial = str(numtransits) + '_mearth'   #example: 89_mearth
-#            print "serial:", serial
             conv_flux = True
 
         elif 'S' in dataset:
@@ -81,7 +78,6 @@ def ind_analysis(list_of_files, dataset):
             print myt0
 
             serial = str(numtransits) + '_spitzer'   #example: 189_spitzer
-#            print serial
 
             ## Trim data to window around transit
             use = np.abs(x-myt0)>.0208
@@ -107,9 +103,6 @@ def ind_analysis(list_of_files, dataset):
             if len(test.split('-'))>1:
                 reduction = test.split('-')[1]
                 fc.reduction = reduction
-
-#            print 'y sample: ', y[0:5]
-#            print 'yerr sample: ', yerr[0:5]
 
             t0 = 2457062.57964
             per = 3.484564
@@ -179,8 +172,6 @@ def ind_analysis(list_of_files, dataset):
             myt0 = t0 + per*numtransits
             serial = str(numtransits) + '_K2'
 
-#            print x,y
-
         ## Analyze data
         call_things(x, y, yerr, serial, conv_flux=conv_flux)
 
@@ -210,14 +201,13 @@ def megastack_analysis(list_of_files, dataset):
     if 'M' in dataset:
         f=open('mearth_slope_file.txt',"r")
         lines=f.readlines()
-#        print lines
+        
         ser, slope_list, offset_list = [], [], []
         for bit in lines:
             ser.append(bit.split(';')[0])
             slope_list.append(bit.split(';')[8])
             offset_list.append(bit.split(';')[9])
         f.close()
-#        print 'ser: ', ser
         print 'slope file parsed'
 
         ## Determine time of mid transit for first datafile
@@ -260,8 +250,6 @@ def megastack_analysis(list_of_files, dataset):
             ## Center all datasets besides first at first_t0
             if count!=1:
                 t = t-(myt0-first_t0)
-#                print 'myt0: ', myt0
-#                print 'first t0: ', first_t0
 
             x.extend(t)
             y.extend(m)
@@ -383,13 +371,6 @@ def visual_analysis(dataset):
         max_list.append(bit.split(';')[14])
     f.close()
 
-#    ## Change serial from '89_mearth' to 89.0 (float)
-#    i = 0
-#    for num in ser:
-#        num = float(num.split('_')[0])
-#        ser[i] = num
-#        i+=1
-
     ## Grab best values
     i = 0
     while i<len(ser):
@@ -469,9 +450,6 @@ def visual_analysis(dataset):
     mearth_avg = [np.mean(rp_list), np.mean(a_list), np.mean(t0_list), np.mean(ecw_list), \
                   np.mean(esw_list), np.mean(limb1_list), np.mean(limb2_list), np.mean(slope_list), \
                   np.mean(offset_list), np.mean(dur_list), np.mean(depth_list)]
-    LCO_avg = [np.mean(rp_list), np.mean(a_list), np.mean(t0_list), np.mean(ecw_list), \
-               np.mean(esw_list), np.mean(limb1_list), np.mean(limb2_list), np.mean(slope_list), \
-               np.mean(offset_list), np.mean(dur_list), np.mean(depth_list)]
 
 
     ## Pick which plots you would like to make here.
@@ -481,17 +459,11 @@ def visual_analysis(dataset):
     #===================================================================================================================================================#
     ## where ftitle is the title of the file, and ptitle is the title of the plot as shown in the pdf.
 
-    print "transit numbers", ser
-
-    ##B1 -- param v. transit: PLANET RADIUS
+    ##B1 -- param v. transit
     ex.make_plot(dataset, ser, 'Transit', 'Planet radius', ser, rp_list, rp_err, spitzer_avg, mearth_avg, LCO_avg, ftitle='rp')
-    ex.make_plot(dataset, ser, 'Transit', 'Eccentricity', ser, ecc_list, ecc_err, spitzer_avg, mearth_avg, LCO_avg, ftitle='ecc')
-    ex.make_plot(dataset, ser, 'Transit', 'Time of Mid-Transit', ser, t0_list, t0_err, spitzer_avg, mearth_avg, LCO_avg, ftitle='t0')
-    ex.make_plot(dataset, ser, 'Transit', 'Transit Depth', ser, depth_list, dep_err, spitzer_avg, mearth_avg, LCO_avg, ftitle='depth')
-    ex.make_plot(dataset, ser, 'Transit', 'Transit Duration', ser, dur_list, dur_err, spitzer_avg, mearth_avg, LCO_avg, ftitle='duration')
 
-    ##B2 -- param v. param: RADIUS V DURATION
-#    ex.make_plot(dataset, ser, 'Planet radius', 'Transit duration', rp_list, dur_list, dur_err, spitzer_avg, LCO_avg, mearth_avg, x_err=rp_err, ftitle='dur-v-rp')
+    ##B2 -- param v. param
+    ex.make_plot(dataset, ser, 'Planet radius', 'Transit duration', rp_list, dur_list, dur_err, spitzer_avg, LCO_avg, mearth_avg, x_err=rp_err, ftitle='dur-v-rp')
 
 #==============================================================================
 # ACTION ZONE
@@ -502,45 +474,14 @@ dataset = input('Which dataset are you using? Type \"S\" for Spitzer, \"M\" for 
 fc.dataset = dataset
 ex.dataset = dataset
 
-if computer == 'Juno':
-    if 'M' in dataset:
-        print 'Analyzing MEarth data'
-        list_of_files = glob.glob('/Users/enewton/Dropbox (MIT)/k225_transits/data/MEarth_*.dat')
-        print list_of_files
-    elif 'S' in dataset:
-        print 'Analyzing Spitzer data'
-        list_of_files = glob.glob('/Users/enewton/Dropbox (MIT)/k225_transits/data/K2-25_*.ascii')
-        print list_of_files
+if 'M' in dataset:
+    print 'Analyzing MEarth data'
+    list_of_files = glob.glob('./MEarth_*.dat')
+elif 'S' in dataset:
+    print 'Analyzing Spitzer data'
+    list_of_files = glob.glob('./Spitzer_*.ascii')
 
-elif computer == 'Vesta':
-    if 'M' in dataset:
-        print 'Analyzing MEarth data'
-        list_of_files = glob.glob('/Users/ellie/Dropbox (MIT)/k225_transits/data/MEarth_s*.dat')
-        print list_of_files
-    elif 'S' in dataset:
-        print 'Analyzing Spitzer data'
-        list_of_files = glob.glob('/Users/ellie/Dropbox (MIT)/k225_transits/data/K2-25_*.ascii')
-        print list_of_files
-
-else:
-    if 'M' in dataset:
-        print 'Analyzing MEarth data'
-        list_of_files = glob.glob('/Users/X-phile/Dropbox/k225_transits/data/MEarth_*.dat')
-        print list_of_files
-    elif 'S' in dataset:
-        print 'Analyzing Spitzer data'
-        list_of_files = glob.glob('/Users/X-phile/Dropbox/k225_transits/data/K2-25_*.ascii')
-        print list_of_files
-    elif 'L' in dataset:
-        print 'Analyzing LCO data'
-        list_of_files = glob.glob('/Users/X-phile/Dropbox/k225_transits/data/LCO/K2-25b_*.ascii')
-        print list_of_files
-    elif 'GJ' in dataset:
-        list_of_files = glob.glob('/Users/X-phile/Dropbox/k225_transits/data/GJ1132_data.txt')
-        print list_of_files
-    elif 'K' in dataset:
-        list_of_files = glob.glob('/Users/X-phile/Dropbox/k225_transits/data/K2/K2*.dat')
-        print list_of_files
+print list_of_files
 
 onefile = input('Would you like to only run one file? Enter either \"filename\" or \"N\"')
 if 'N' not in onefile:
@@ -550,7 +491,7 @@ if 'N' not in onefile:
 #///\\\///\\\///\\\///\\\///\\\///\\\#
 
 ind_analysis(list_of_files, dataset)
-#megastack_analysis(list_of_files, dataset)
-#visual_analysis(dataset)
+megastack_analysis(list_of_files, dataset)
+visual_analysis(dataset)
 
 #///\\\///\\\///\\\///\\\///\\\///\\\#
