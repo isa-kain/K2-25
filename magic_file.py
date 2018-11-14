@@ -476,10 +476,10 @@ ex.dataset = dataset
 
 if 'M' in dataset:
     print 'Analyzing MEarth data'
-    list_of_files = glob.glob('./MEarth_*.dat')
+    list_of_files = glob.glob('./example_MEarth.dat')
 elif 'S' in dataset:
     print 'Analyzing Spitzer data'
-    list_of_files = glob.glob('./Spitzer_*.ascii')
+    list_of_files = glob.glob('./example_Spitzer.ascii')
 
 print list_of_files
 
